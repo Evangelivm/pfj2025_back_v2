@@ -1,0 +1,131 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model asistencia {
+  id_asist      Int          @id @default(autoincrement())
+  id_part       Int
+  ficha_firmada String       @db.VarChar(255)
+  participacion Int
+  asistio       String       @db.VarChar(255)
+  participante  participante @relation(fields: [id_part], references: [id_part], onUpdate: Restrict, map: "asistencia_ibfk_1")
+
+  @@index([id_part], map: "id_part")
+}
+
+model barrio {
+  id_barrio                                Int            @id @default(autoincrement())
+  estaca                                   Int
+  barrio                                   String         @db.VarChar(255)
+  estaca_barrio_estacaToestaca             estaca         @relation("barrio_estacaToestaca", fields: [estaca], references: [est_id], onUpdate: Restrict, map: "barrio_ibfk_1")
+  participante_participante_barrioTobarrio participante[] @relation("participante_barrioTobarrio")
+
+  @@index([estaca], map: "estaca")
+}
+
+model comp {
+  comp_id      Int            @id @default(autoincrement())
+  compa_ia     String         @map("compañia") @db.VarChar(255)
+  participante participante[]
+}
+
+model comp_consej {
+  id_comp      Int          @id @default(autoincrement())
+  id_part      Int
+  contactado   String       @db.VarChar(255)
+  part_confirm String       @db.VarChar(255)
+  participante participante @relation(fields: [id_part], references: [id_part], onUpdate: Restrict, map: "comp_consej_ibfk_1")
+
+  @@index([id_part], map: "id_part")
+}
+
+model estaca {
+  est_id                                   Int            @id @default(autoincrement())
+  estaca                                   String         @db.VarChar(255)
+  barrio_barrio_estacaToestaca             barrio[]       @relation("barrio_estacaToestaca")
+  participante_participante_estacaToestaca participante[] @relation("participante_estacaToestaca")
+}
+
+model estado {
+  est_id                                   Int            @id @default(autoincrement())
+  estado_part                              String         @db.VarChar(255)
+  participante_participante_estadoToestado participante[] @relation("participante_estadoToestado")
+}
+
+model habitacion {
+  habit_id                                         Int            @id @default(autoincrement())
+  habitacion                                       String         @db.VarChar(255)
+  participante_participante_habitacionTohabitacion participante[] @relation("participante_habitacionTohabitacion")
+}
+
+model infor_med {
+  med_id       Int          @id @default(autoincrement())
+  id_part      Int
+  inf_med      String       @db.VarChar(255)
+  inf_alim     String       @db.VarChar(255)
+  grup_sang    String       @db.VarChar(255)
+  alergia      String       @db.VarChar(255)
+  trat_med     String       @db.VarChar(255)
+  diabet_asma  String       @db.VarChar(255)
+  seg_med      String       @db.VarChar(255)
+  dosis        String       @db.VarChar(255)
+  dieta        String       @db.VarChar(255)
+  participante participante @relation(fields: [id_part], references: [id_part], onUpdate: Restrict, map: "infor_med_ibfk_1")
+
+  @@index([id_part], map: "id_part")
+}
+
+model participante {
+  id_part                                        Int           @id @default(autoincrement())
+  apellidos                                      String        @db.VarChar(255)
+  nombres                                        String        @db.VarChar(255)
+  edad                                           Int
+  cumplea_os                                     DateTime      @map("cumpleaños") @db.Date
+  estaca                                         Int
+  barrio                                         Int
+  telefono                                       String        @db.VarChar(255)
+  sexo                                           String        @db.VarChar(255)
+  estado                                         Int
+  compa_ia                                       Int           @map("compañia")
+  habitacion                                     Int
+  tipo                                           String
+  correo                                         String?       @db.VarChar(255)
+  talla                                          String?       @db.VarChar(255)
+  nom_c1                                         String?       @db.VarChar(255)
+  correo_c1                                      String?       @db.VarChar(255)
+  telef_c1                                       String?       @db.VarChar(255)
+  nom_c2                                         String?       @db.VarChar(255)
+  correo_c2                                      String?       @db.VarChar(255)
+  telef_c2                                       String?       @db.VarChar(255)
+  miembro                                        String?       @db.VarChar(255)
+  asistencia                                     asistencia[]
+  comp_consej                                    comp_consej[]
+  infor_med                                      infor_med[]
+  estaca_participante_estacaToestaca             estaca        @relation("participante_estacaToestaca", fields: [estaca], references: [est_id], onUpdate: Restrict, map: "participante_ibfk_1")
+  barrio_participante_barrioTobarrio             barrio        @relation("participante_barrioTobarrio", fields: [barrio], references: [id_barrio], onUpdate: Restrict, map: "participante_ibfk_2")
+  estado_participante_estadoToestado             estado        @relation("participante_estadoToestado", fields: [estado], references: [est_id], onUpdate: Restrict, map: "participante_ibfk_3")
+  comp                                           comp          @relation(fields: [compa_ia], references: [comp_id], onUpdate: Restrict, map: "participante_ibfk_4")
+  habitacion_participante_habitacionTohabitacion habitacion    @relation("participante_habitacionTohabitacion", fields: [habitacion], references: [habit_id], onUpdate: Restrict, map: "participante_ibfk_5")
+  topico                                         topico[]
+
+  @@index([barrio], map: "barrio")
+  @@index([compa_ia], map: "compañia")
+  @@index([estaca], map: "estaca")
+  @@index([estado], map: "estado")
+  @@index([habitacion], map: "habitacion")
+}
+
+model topico {
+  top_id       Int          @id @default(autoincrement())
+  id_part      Int
+  fecha_atenc  DateTime     @default(now()) @db.Timestamp(0)
+  info         String       @db.VarChar(255)
+  participante participante @relation(fields: [id_part], references: [id_part], onUpdate: Restrict, map: "topico_ibfk_1")
+
+  @@index([id_part], map: "id_part")
+}
