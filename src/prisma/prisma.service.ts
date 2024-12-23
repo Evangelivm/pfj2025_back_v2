@@ -1,20 +1,25 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { WsGateway } from 'src/ws/ws.gateway';
+import { RedisService } from 'src/redis/redis.service';
 
 @Injectable()
 export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
-  constructor() {
+  constructor(private readonly redisService: RedisService) {
     super({
       log: ['query', 'info', 'warn', 'error'], // Opcional: logs para monitoreo
     });
   }
 
   async onModuleInit() {
-    await this.$connect(); // Conexión con la base de datos
+    await this.$connect();
+
+    // Publicar los resúmenes al iniciar el backend
+    console.log('Backend iniciado, publicando resúmenes...');
+    await this.publishSummariesByAges();
   }
 
   async onModuleDestroy() {
@@ -75,6 +80,7 @@ export class PrismaService
 
     return { message: 'Asistencia actualizada con éxito' };
   }
+  // Método para ejecutar la consulta según la edad
   async getSummaryByAge(edad: number) {
     return this.$queryRaw`
       SELECT 
@@ -101,6 +107,20 @@ export class PrismaService
         hombres DESC, 
         mujeres DESC;
     `;
+  }
+
+  // Método para publicar resultados en Redis
+  async publishSummariesByAges() {
+    const edades = [18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30];
+
+    for (const edad of edades) {
+      const summary = await this.getSummaryByAge(edad);
+
+      // Publicar cada resumen en Redis
+      const channel = `summary-age-${edad}`;
+      await this.redisService.publish(channel, JSON.stringify(summary));
+      console.log(`Publicado resumen para edad ${edad} en el canal ${channel}`);
+    }
   }
   // PrismaService - Agregar nueva consulta para obtener estacas
   async getEstacas() {

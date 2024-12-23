@@ -19,6 +19,12 @@ export class PartController {
 
   @Put(':id')
   async updateAsistencia(@Param('id') id: string) {
-    return this.prismaService.updateAsistencia(id);
+    const response = await this.prismaService.updateAsistencia(id);
+
+    // Publicar resúmenes después del PUT
+    console.log('Actualización realizada, publicando resúmenes...');
+    await this.prismaService.publishSummariesByAges();
+
+    return response;
   }
 }
