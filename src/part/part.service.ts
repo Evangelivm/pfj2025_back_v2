@@ -20,7 +20,7 @@ export class PartService {
     });
 
     // 2. Notifica a través de WebSocket sobre la actualización
-    await this.wsGateway.notifyUpdate(id_part);
+    //await this.wsGateway.notifyUpdate(id_part);
 
     // 3. Publica el mensaje a un canal de Redis para la notificación en otros servicios
     await this.redisService.publish(

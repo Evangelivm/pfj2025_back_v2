@@ -1,46 +1,37 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { createClient, RedisClientType } from 'redis';
 
 @Injectable()
-export class RedisService implements OnModuleInit, OnModuleDestroy {
-  private publisher: RedisClientType;
-  private subscriber: RedisClientType;
+export class RedisService {
+  private client: RedisClientType;
 
   constructor() {
-    this.publisher = createClient();
-    this.subscriber = createClient();
+    this.client = createClient();
+    this.client.connect();
   }
 
-  async onModuleInit() {
-    await this.publisher.connect();
-    await this.subscriber.connect();
-
-    console.log('Redis publisher y subscriber conectados.');
-  }
-
-  async onModuleDestroy() {
-    await this.publisher.disconnect();
-    await this.subscriber.disconnect();
-
-    console.log('Redis publisher y subscriber desconectados.');
+  getClient() {
+    return this.client;
   }
 
   async publish(channel: string, message: string) {
-    // Guarda el último mensaje en un Hash antes de publicarlo
-    await this.publisher.hSet(`last-message:${channel}`, 'message', message);
-    await this.publisher.publish(channel, message);
-    console.log(`Mensaje publicado en canal ${channel}:`, message);
+    await this.client.publish(channel, message);
   }
 
-  async subscribe(channel: string, callback: (message: string) => void) {
-    this.subscriber.subscribe(channel, (message) => {
-      console.log(`Mensaje recibido en canal ${channel}:`, message);
-      callback(message);
-    });
+  async subscribe(channel: string, listener: (message: string) => void) {
+    const subscriber = this.client.duplicate();
+    await subscriber.connect();
+    await subscriber.subscribe(channel, listener);
   }
 
-  async getLastMessage(channel: string): Promise<string | null> {
-    // Recupera el último mensaje almacenado en el Hash
-    return await this.publisher.hGet(`last-message:${channel}`, 'message');
+  // Métodos para manejar Hashes
+  async setHash(key: string, field: string, value: string) {
+    await this.client.hSet(key, field, value);
+  }
+
+  async getHashField(key: string, field: string): Promise<string | null> {
+    const value = await this.client.hGet(key, field);
+    console.log(value);
+    return value;
   }
 }

@@ -109,19 +109,43 @@ export class PrismaService
     `;
   }
 
-  // Método para publicar resultados en Redis
+  // Método para publicar y guardar en Hashes
   async publishSummariesByAges() {
     const edades = [18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30];
 
     for (const edad of edades) {
       const summary = await this.getSummaryByAge(edad);
-
-      // Publicar cada resumen en Redis
       const channel = `summary-age-${edad}`;
-      await this.redisService.publish(channel, JSON.stringify(summary));
-      console.log(`Publicado resumen para edad ${edad} en el canal ${channel}`);
+      const serializedSummary = JSON.stringify(summary);
+
+      // Guardar el último mensaje en un Redis Hash
+      await this.redisService.setHash(
+        `last-message:${channel}`,
+        'message',
+        serializedSummary,
+      );
+
+      // Publicar el mensaje en el canal Pub/Sub
+      await this.redisService.publish(channel, serializedSummary);
+
+      console.log(
+        `Publicado y guardado resumen para edad ${edad} en el canal ${channel}`,
+      );
     }
   }
+  // async publishSummariesByAges() {
+  //   const edades = [18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30];
+
+  //   for (const edad of edades) {
+  //     const summary = await this.getSummaryByAge(edad);
+
+  //     // Publicar cada resumen en Redis
+  //     const channel = `summary-age-${edad}`;
+  //     await this.redisService.publish(channel, JSON.stringify(summary));
+  //     console.log(`Publicado resumen para edad ${edad} en el canal ${channel}`);
+  //   }
+  // }
+
   // PrismaService - Agregar nueva consulta para obtener estacas
   async getEstacas() {
     const estacas = await this.$queryRaw<
@@ -138,5 +162,13 @@ export class PrismaService
       FROM barrio 
       WHERE estaca = ${estacaId};
     `;
+  }
+  // Obtener el último mensaje desde Redis Hash
+  async getLastMessage(channel: string) {
+    const message = await this.redisService.getHashField(
+      `last-message:${channel}`,
+      'message',
+    );
+    return message ? JSON.parse(message) : null;
   }
 }
