@@ -1,0 +1,17 @@
+services:
+  db:
+    image: mysql:8.0-debian
+    container_name: db_pfj
+    ports:
+      - '3306:3306'
+    environment:
+      MYSQL_ROOT_PASSWORD: devysalomonrondon
+      MYSQL_DATABASE: pfj
+      MYSQL_USER: devysal
+      MYSQL_PASSWORD: devysalomon
+    networks:
+      - shared_network
+
+networks:
+  shared_network:
+    external: true

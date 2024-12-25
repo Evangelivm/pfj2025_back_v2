@@ -1,0 +1,18 @@
+{
+  "Debug": true,
+  "ListenAddress": ":3000",
+  "MySQLTopologyUser": "myuser",
+  "MySQLTopologyPassword": "mypassword",
+  "MySQLOrchestratorHost": "127.0.0.1",
+  "MySQLOrchestratorPort": 3306,
+  "MySQLOrchestratorDatabase": "orchestrator",
+  "MySQLOrchestratorUser": "myuser",
+  "MySQLOrchestratorPassword": "mypassword",
+  "InstancePollSeconds": 5,
+  "PromotionIgnoreHostnameFilters": [],
+  "RecoverMasterClusterFilters": [".*"],
+  "RecoveryPeriodBlockSeconds": 300,
+  "ApplyMySQLPromotionAfterMasterFailover": true,
+  "MasterFailoverDetectionSeconds": 10,
+  "FailureDetectionPeriodBlockMinutes": 5
+}

@@ -1,0 +1,15 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '3000:3000'
+    environment:
+      DATABASE_URL: mysql://root:devysalomonrondon@db_pfj:3306/pfj
+    networks:
+      - shared_network
+
+networks:
+  shared_network:
+    external: true

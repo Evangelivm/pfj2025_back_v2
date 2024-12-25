@@ -1,0 +1,145 @@
+version: '3.8'
+
+services:
+  mysql_master:
+    image: mysql:8.0-debian
+    container_name: mysql_master
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: masterpass
+      MYSQL_DATABASE: myapp
+      MYSQL_USER: myuser
+      MYSQL_PASSWORD: mypassword
+    volumes:
+      - mysql_master_data:/var/lib/mysql
+      - ./master/mysql.conf.d:/etc/mysql/mysql.conf.d
+    ports:
+      - '3306:3306'
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mysql_network
+
+  mysql_slave1:
+    image: mysql:8.0-debian
+    container_name: mysql_slave1
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: slavepass
+      MYSQL_DATABASE: myapp
+      MYSQL_USER: myuser
+      MYSQL_PASSWORD: mypassword
+    volumes:
+      - mysql_slave1_data:/var/lib/mysql
+      - ./slave/mysql.conf.d/mysql-slave1.cnf:/etc/mysql/mysql.conf.d/mysqld.cnf
+    ports:
+      - '3307:3306'
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      mysql_master:
+        condition: service_healthy
+    networks:
+      - mysql_network
+
+  mysql_slave2:
+    image: mysql:8.0-debian
+    container_name: mysql_slave2
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: slavepass
+      MYSQL_DATABASE: myapp
+      MYSQL_USER: myuser
+      MYSQL_PASSWORD: mypassword
+    volumes:
+      - mysql_slave2_data:/var/lib/mysql
+      - ./slave/mysql.conf.d/mysql-slave2.cnf:/etc/mysql/mysql.conf.d/mysqld.cnf
+    ports:
+      - '3308:3306'
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      mysql_master:
+        condition: service_healthy
+    networks:
+      - mysql_network
+
+  mysql_slave3:
+    image: mysql:8.0-debian
+    container_name: mysql_slave3
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: slavepass
+      MYSQL_DATABASE: myapp
+      MYSQL_USER: myuser
+      MYSQL_PASSWORD: mypassword
+    volumes:
+      - mysql_slave3_data:/var/lib/mysql
+      - ./slave/mysql.conf.d/mysql-slave3.cnf:/etc/mysql/mysql.conf.d/mysqld.cnf
+    ports:
+      - '3309:3306'
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      mysql_master:
+        condition: service_healthy
+    networks:
+      - mysql_network
+
+  haproxy:
+    image: haproxy:2.8
+    container_name: haproxy
+    volumes:
+      - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    ports:
+      - '3310:3310' # Write port (master)
+      - '3311:3311' # Read port (slaves)
+    depends_on:
+      - mysql_master
+      - mysql_slave1
+      - mysql_slave2
+      - mysql_slave3
+    networks:
+      - mysql_network
+
+  orchestrator:
+    image: openarkcode/orchestrator:latest
+    container_name: orchestrator
+    ports:
+      - '3012:3012'
+    environment:
+      - ORCHESTRATOR_USER=admin
+      - ORCHESTRATOR_PASSWORD=admin
+    volumes:
+      - ./orchestrator/orchestrator.conf.json:/etc/orchestrator.conf.json
+      - orchestrator_data:/var/lib/orchestrator
+    depends_on:
+      - mysql_master
+      - mysql_slave1
+      - mysql_slave2
+      - mysql_slave3
+    networks:
+      - mysql_network
+
+networks:
+  mysql_network:
+    driver: bridge
+
+volumes:
+  mysql_master_data:
+  mysql_slave1_data:
+  mysql_slave2_data:
+  mysql_slave3_data:
+  orchestrator_data:
