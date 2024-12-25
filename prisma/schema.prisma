@@ -48,6 +48,7 @@ model estaca {
   est_id                                   Int            @id @default(autoincrement())
   estaca                                   String         @db.VarChar(255)
   barrio_barrio_estacaToestaca             barrio[]       @relation("barrio_estacaToestaca")
+  barrio_copy1_barrio_copy1_estacaToestaca barrio_copy1[] @relation("barrio_copy1_estacaToestaca")
   participante_participante_estacaToestaca participante[] @relation("participante_estacaToestaca")
 }
 
@@ -60,7 +61,7 @@ model estado {
 model habitacion {
   habit_id                                         Int            @id @default(autoincrement())
   habitacion                                       String         @db.VarChar(255)
-  sexo                                             String         @db.VarChar(255)
+  sexo                                             String?        @db.VarChar(255)
   participante_participante_habitacionTohabitacion participante[] @relation("participante_habitacionTohabitacion")
 }
 
@@ -129,4 +130,13 @@ model topico {
   participante participante @relation(fields: [id_part], references: [id_part], onUpdate: Restrict, map: "topico_ibfk_1")
 
   @@index([id_part], map: "id_part")
+}
+
+model barrio_copy1 {
+  id_barrio                          Int    @id @default(autoincrement())
+  estaca                             Int
+  barrio                             String @db.VarChar(255)
+  estaca_barrio_copy1_estacaToestaca estaca @relation("barrio_copy1_estacaToestaca", fields: [estaca], references: [est_id], onUpdate: Restrict, map: "barrio_copy1_ibfk_1")
+
+  @@index([estaca], map: "estaca")
 }
