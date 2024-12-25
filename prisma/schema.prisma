@@ -60,6 +60,7 @@ model estado {
 model habitacion {
   habit_id                                         Int            @id @default(autoincrement())
   habitacion                                       String         @db.VarChar(255)
+  sexo                                             String         @db.VarChar(255)
   participante_participante_habitacionTohabitacion participante[] @relation("participante_habitacionTohabitacion")
 }
 
