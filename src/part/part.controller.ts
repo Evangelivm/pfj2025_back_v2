@@ -24,6 +24,7 @@ export class PartController {
     // Publicar resúmenes después del PUT
     console.log('Actualización realizada, publicando resúmenes...');
     await this.prismaService.publishSummariesByAges();
+    await this.prismaService.publishRoomsByAgesAndGenre();
 
     return response;
   }

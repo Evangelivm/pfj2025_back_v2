@@ -20,6 +20,7 @@ export class PrismaService
     // Publicar los resúmenes al iniciar el backend
     console.log('Backend iniciado, publicando resúmenes...');
     await this.publishSummariesByAges();
+    await this.publishRoomsByAgesAndGenre();
   }
 
   async onModuleDestroy() {
@@ -109,6 +110,37 @@ export class PrismaService
     `;
   }
 
+  // Método para ejecutar la consulta de habitaciones según la edad y género
+  async getRoomsByAgesAndGenre(edad: number, genero: string) {
+    const result = await this.$queryRaw`
+    SELECT 
+        a.habitacion, 
+        a.nro_camas AS 'camas', 
+        COUNT(b.id_part) AS 'registrados', 
+        COUNT(CASE WHEN c.asistio = 'Si' THEN 1 END) AS 'ocupados',
+        a.nro_camas - COUNT(CASE WHEN c.asistio = 'Si' THEN 1 END) AS 'libres'
+    FROM habitacion a
+    JOIN participante b ON a.habit_id = b.habitacion
+    JOIN asistencia c ON b.id_part = c.id_part
+    WHERE a.sexo = ${genero}  -- Filtro por género
+      AND a.habit_id IN (
+          SELECT habitacion
+          FROM participante
+          WHERE edad = ${edad}  -- Filtro por edad
+          GROUP BY habitacion
+      )
+    GROUP BY a.habitacion, a.nro_camas;
+  `;
+
+    // Convertir los resultados a tipo number
+    return (result as any).map((row) => ({
+      ...row,
+      registrados: Number(row.registrados),
+      ocupados: Number(row.ocupados),
+      libres: Number(row.libres),
+    }));
+  }
+
   // Método para publicar y guardar en Hashes
   async publishSummariesByAges() {
     const edades = [18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30];
@@ -133,18 +165,32 @@ export class PrismaService
       );
     }
   }
-  // async publishSummariesByAges() {
-  //   const edades = [18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30];
+  // Método para publicar habitaciones y guardar en Hashes
+  async publishRoomsByAgesAndGenre() {
+    const edades = [18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30];
+    const generos = ['H', 'M'];
+    for (const genero of generos) {
+      for (const edad of edades) {
+        const rooms = await this.getRoomsByAgesAndGenre(edad, genero);
+        const channel = `rooms-age-${edad}-${genero}`;
+        const serializedRooms = JSON.stringify(rooms);
 
-  //   for (const edad of edades) {
-  //     const summary = await this.getSummaryByAge(edad);
+        // Guardar el último mensaje en un Redis Hash
+        await this.redisService.setHash(
+          `last-message:${channel}`,
+          'message',
+          serializedRooms,
+        );
 
-  //     // Publicar cada resumen en Redis
-  //     const channel = `summary-age-${edad}`;
-  //     await this.redisService.publish(channel, JSON.stringify(summary));
-  //     console.log(`Publicado resumen para edad ${edad} en el canal ${channel}`);
-  //   }
-  // }
+        // Publicar el mensaje en el canal Pub/Sub
+        await this.redisService.publish(channel, serializedRooms);
+
+        console.log(
+          `Publicado y guardado resumen para edad ${edad} y sexo ${genero} en el canal ${channel}`,
+        );
+      }
+    }
+  }
 
   // PrismaService - Agregar nueva consulta para obtener estacas
   async getEstacas() {
